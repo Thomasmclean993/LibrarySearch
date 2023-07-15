@@ -3,3 +3,19 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+.search-form {
+    display: flex;
+  }
+  
+  .search-form input[type="text"] {
+    flex-grow: 1;
+    padding: 8px;
+  }
+  
+  .search-form button {
+    padding: 8px;
+    border: none;
+    background-color: #9a1cda;
+    color: #f8f6f9;
+    cursor: pointer;
+  }

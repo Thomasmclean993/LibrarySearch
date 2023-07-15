@@ -4,100 +4,31 @@ defmodule LibrarySearch.Searchs do
   """
 
   import Ecto.Query, warn: false
-  alias LibrarySearch.Repo
 
   alias LibrarySearch.Searchs.Query
 
-  @doc """
-  Returns the list of queries.
+  def send_to_api(user_input) do
+    converted_input = convert_query(user_input)
 
-  ## Examples
+    case HTTPoison.get("http://openlibrary.org/search.json?q=#{converted_input}", [],
+           ssl: [versions: [:"tlsv1.2"]]
+         ) do
+      {:ok, response} ->
+        {:ok, response}
 
-      iex> list_queries()
-      [%Query{}, ...]
-
-  """
-  def list_queries do
-    Repo.all(Query)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  @doc """
-  Gets a single query.
+  def convert_query(string) when string == " ", do: "Not an acceptable query, Please try again."
 
-  Raises `Ecto.NoResultsError` if the Query does not exist.
-
-  ## Examples
-
-      iex> get_query!(123)
-      %Query{}
-
-      iex> get_query!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_query!(id), do: Repo.get!(Query, id)
-
-  @doc """
-  Creates a query.
-
-  ## Examples
-
-      iex> create_query(%{field: value})
-      {:ok, %Query{}}
-
-      iex> create_query(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_query(attrs \\ %{}) do
-    %Query{}
-    |> Query.changeset(attrs)
-    |> Repo.insert()
+  def convert_query(string) do
+    string
+    |> String.downcase()
+    |> String.replace(" ", "+")
   end
 
-  @doc """
-  Updates a query.
-
-  ## Examples
-
-      iex> update_query(query, %{field: new_value})
-      {:ok, %Query{}}
-
-      iex> update_query(query, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_query(%Query{} = query, attrs) do
-    query
-    |> Query.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a query.
-
-  ## Examples
-
-      iex> delete_query(query)
-      {:ok, %Query{}}
-
-      iex> delete_query(query)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_query(%Query{} = query) do
-    Repo.delete(query)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking query changes.
-
-  ## Examples
-
-      iex> change_query(query)
-      %Ecto.Changeset{data: %Query{}}
-
-  """
   def change_query(%Query{} = query, attrs \\ %{}) do
     Query.changeset(query, attrs)
   end

@@ -18,6 +18,7 @@ defmodule LibrarySearchWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/query", QueryController, :search
   end
 
   # Other scopes may use custom stacks.

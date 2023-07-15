@@ -1,61 +1,46 @@
 defmodule LibrarySearch.SearchsTest do
   use LibrarySearch.DataCase
+  use ExUnit.Case, async: true
+  use Mimic.DSL
 
   alias LibrarySearch.Searchs
+  alias Support.Fixtures.FixtureHelper
 
-  describe "queries" do
-    alias LibrarySearch.Searchs.Query
-
-    import LibrarySearch.SearchsFixtures
-
-    @invalid_attrs %{query: nil, query_with_add_ons: nil}
-
-    test "list_queries/0 returns all queries" do
-      query = query_fixture()
-      assert Searchs.list_queries() == [query]
+  describe "convert_query/1" do
+    test "Successfully convert a query to the correct format" do
+      user_input = "the Lord of the Rings"
+      assert Searchs.convert_query(user_input) == "the+lord+of+the+rings"
     end
 
-    test "get_query!/1 returns the query with given id" do
-      query = query_fixture()
-      assert Searchs.get_query!(query.id) == query
+    test "converts a single word response" do
+      user_input = "Lord"
+
+      assert Searchs.convert_query(user_input) == "lord"
     end
 
-    test "create_query/1 with valid data creates a query" do
-      valid_attrs = %{query: "some query", query_with_add_ons: "some query_with_add_ons"}
+    test "converts a empty response without adding unnecessary +" do
+      empty_input = " "
 
-      assert {:ok, %Query{} = query} = Searchs.create_query(valid_attrs)
-      assert query.query == "some query"
-      assert query.query_with_add_ons == "some query_with_add_ons"
+      assert Searchs.convert_query(empty_input) == "Not an acceptable query, Please try again."
+    end
+  end
+
+  describe "Send_to_api/1" do
+    test "Confirm a successful HTTPoison request is sent" do
+      user_input = "the lord of the rings"
+      response = FixtureHelper.retrieve_sample("lord_of_the_rings")
+
+      expect(HTTPoison.get(_, _, _), do: {:ok, response})
+
+      assert {:ok, response} == Searchs.send_to_api(user_input)
     end
 
-    test "create_query/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Searchs.create_query(@invalid_attrs)
-    end
+    test "When query fails, returns a not found error" do
+      user_input = "the lord of the rings"
 
-    test "update_query/2 with valid data updates the query" do
-      query = query_fixture()
-      update_attrs = %{query: "some updated query", query_with_add_ons: "some updated query_with_add_ons"}
+      expect(HTTPoison.get(_, _, _), do: {:error, %HTTPoison.Error{}})
 
-      assert {:ok, %Query{} = query} = Searchs.update_query(query, update_attrs)
-      assert query.query == "some updated query"
-      assert query.query_with_add_ons == "some updated query_with_add_ons"
-    end
-
-    test "update_query/2 with invalid data returns error changeset" do
-      query = query_fixture()
-      assert {:error, %Ecto.Changeset{}} = Searchs.update_query(query, @invalid_attrs)
-      assert query == Searchs.get_query!(query.id)
-    end
-
-    test "delete_query/1 deletes the query" do
-      query = query_fixture()
-      assert {:ok, %Query{}} = Searchs.delete_query(query)
-      assert_raise Ecto.NoResultsError, fn -> Searchs.get_query!(query.id) end
-    end
-
-    test "change_query/1 returns a query changeset" do
-      query = query_fixture()
-      assert %Ecto.Changeset{} = Searchs.change_query(query)
+      assert {:error, %HTTPoison.Error{reason: nil, id: nil}} == Searchs.send_to_api(user_input)
     end
   end
 end
